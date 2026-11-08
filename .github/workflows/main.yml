@@ -1,0 +1,451 @@
+name: WeatherX Premium APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Create Flutter app
+        run: |
+          flutter create --org com.weatherx weatherx
+          cd weatherx
+          cat > lib/main.dart <<'EOF'
+          import 'dart:math' as math;
+          import 'package:flutter/material.dart';
+
+          void main() => runApp(const WeatherX());
+
+          class WeatherX extends StatelessWidget {
+            const WeatherX({super.key});
+
+            @override
+            Widget build(BuildContext context) {
+              return MaterialApp(
+                debugShowCheckedModeBanner: false,
+                theme: ThemeData(
+                  brightness: Brightness.dark,
+                  useMaterial3: true,
+                  fontFamily: 'Roboto',
+                ),
+                home: const WeatherHome(),
+              );
+            }
+          }
+
+          class WeatherHome extends StatefulWidget {
+            const WeatherHome({super.key});
+
+            @override
+            State<WeatherHome> createState() => _WeatherHomeState();
+          }
+
+          class _WeatherHomeState extends State<WeatherHome>
+              with TickerProviderStateMixin {
+            late AnimationController sky;
+            late AnimationController pulse;
+            late AnimationController entry;
+
+            @override
+            void initState() {
+              super.initState();
+              sky = AnimationController(
+                vsync: this,
+                duration: const Duration(seconds: 18),
+              )..repeat();
+
+              pulse = AnimationController(
+                vsync: this,
+                duration: const Duration(seconds: 3),
+              )..repeat(reverse: true);
+
+              entry = AnimationController(
+                vsync: this,
+                duration: const Duration(milliseconds: 1200),
+              )..forward();
+            }
+
+            @override
+            void dispose() {
+              sky.dispose();
+              pulse.dispose();
+              entry.dispose();
+              super.dispose();
+            }
+
+            Widget glassCard(Widget child) {
+              return Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.075),
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.13),
+                  ),
+                ),
+                child: child,
+              );
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(
+                body: AnimatedBuilder(
+                  animation: Listenable.merge([sky, pulse, entry]),
+                  builder: (context, child) {
+                    return Stack(
+                      children: [
+                        Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFF101C3B),
+                                Color(0xFF172E50),
+                                Color(0xFF090F20),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: -100 + 15 * math.sin(sky.value * 2 * math.pi),
+                          right: -90,
+                          child: Container(
+                            width: 280,
+                            height: 280,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.cyanAccent.withOpacity(0.08),
+                            ),
+                          ),
+                        ),
+                        SafeArea(
+                          child: Opacity(
+                            opacity: entry.value,
+                            child: Transform.translate(
+                              offset: Offset(0, 25 * (1 - entry.value)),
+                              child: SingleChildScrollView(
+                                padding: const EdgeInsets.all(22),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'WEATHERX',
+                                              style: TextStyle(
+                                                fontSize: 19,
+                                                fontWeight: FontWeight.w900,
+                                                letterSpacing: 5,
+                                                color: Colors.cyanAccent,
+                                              ),
+                                            ),
+                                            SizedBox(height: 5),
+                                            Text(
+                                              'PREMIUM WEATHER EXPERIENCE',
+                                              style: TextStyle(
+                                                fontSize: 9,
+                                                letterSpacing: 2,
+                                                color: Colors.white54,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        CircleAvatar(
+                                          backgroundColor:
+                                              Colors.white.withOpacity(0.1),
+                                          child: const Icon(
+                                            Icons.my_location,
+                                            color: Colors.cyanAccent,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 35),
+                                    const Center(
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            'YOUR LOCATION',
+                                            style: TextStyle(
+                                              color: Colors.white54,
+                                              letterSpacing: 3,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            'Welcome to WeatherX',
+                                            style: TextStyle(
+                                              fontSize: 23,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 25),
+                                    Center(
+                                      child: SizedBox(
+                                        height: 190,
+                                        width: 230,
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            Transform.scale(
+                                              scale: 1 + pulse.value * 0.12,
+                                              child: Container(
+                                                height: 155,
+                                                width: 155,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.orange
+                                                          .withOpacity(0.16),
+                                                      blurRadius: 55,
+                                                      spreadRadius: 15,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                            Transform.rotate(
+                                              angle: sky.value * 2 * math.pi,
+                                              child: const Icon(
+                                                Icons.wb_sunny_rounded,
+                                                size: 125,
+                                                color: Color(0xFFFFC857),
+                                              ),
+                                            ),
+                                            Positioned(
+                                              bottom: 4,
+                                              right: 5,
+                                              child: Icon(
+                                                Icons.cloud_rounded,
+                                                size: 90,
+                                                color: Colors.blueGrey.shade100,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    const Center(
+                                      child: Text(
+                                        '--°',
+                                        style: TextStyle(
+                                          fontSize: 75,
+                                          fontWeight: FontWeight.w200,
+                                          height: 1,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    const Center(
+                                      child: Text(
+                                        'Weather data not connected',
+                                        style: TextStyle(
+                                          color: Colors.white60,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 28),
+                                    glassCard(
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            'WEATHER OVERVIEW',
+                                            style: TextStyle(
+                                              letterSpacing: 2,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                              color: Colors.cyanAccent,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 20),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceAround,
+                                            children: const [
+                                              _Metric(
+                                                icon: Icons.water_drop,
+                                                name: 'Humidity',
+                                                value: '--%',
+                                              ),
+                                              _Metric(
+                                                icon: Icons.air,
+                                                name: 'Wind',
+                                                value: '--',
+                                              ),
+                                              _Metric(
+                                                icon: Icons.thermostat,
+                                                name: 'Feels like',
+                                                value: '--°',
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    const Text(
+                                      'FORECAST',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        letterSpacing: 3,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    glassCard(
+                                      const Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceAround,
+                                        children: [
+                                          _Forecast(
+                                            time: 'Now',
+                                            icon: Icons.wb_sunny,
+                                            temp: '--°',
+                                          ),
+                                          _Forecast(
+                                            time: 'Next',
+                                            icon: Icons.cloud,
+                                            temp: '--°',
+                                          ),
+                                          _Forecast(
+                                            time: 'Later',
+                                            icon: Icons.cloud_queue,
+                                            temp: '--°',
+                                          ),
+                                          _Forecast(
+                                            time: 'Night',
+                                            icon: Icons.nightlight_round,
+                                            temp: '--°',
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 25),
+                                    Center(
+                                      child: Text(
+                                        'WEATHERX  •  VERSION 1.0',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          letterSpacing: 2,
+                                          color: Colors.white.withOpacity(0.4),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              );
+            }
+          }
+
+          class _Metric extends StatelessWidget {
+            final IconData icon;
+            final String name;
+            final String value;
+
+            const _Metric({
+              required this.icon,
+              required this.name,
+              required this.value,
+            });
+
+            @override
+            Widget build(BuildContext context) {
+              return Column(
+                children: [
+                  Icon(icon, color: Colors.cyanAccent, size: 25),
+                  const SizedBox(height: 10),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.white54,
+                    ),
+                  ),
+                ],
+              );
+            }
+          }
+
+          class _Forecast extends StatelessWidget {
+            final String time;
+            final IconData icon;
+            final String temp;
+
+            const _Forecast({
+              required this.time,
+              required this.icon,
+              required this.temp,
+            });
+
+            @override
+            Widget build(BuildContext context) {
+              return Column(
+                children: [
+                  Text(time, style: const TextStyle(color: Colors.white60)),
+                  const SizedBox(height: 13),
+                  Icon(icon, color: Colors.cyanAccent, size: 25),
+                  const SizedBox(height: 13),
+                  Text(
+                    temp,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              );
+            }
+          }
+          EOF
+          flutter build apk --release
+
+      - name: Upload WeatherX APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: WeatherX-Premium-APK
+          path: weatherx/build/app/outputs/flutter-apk/app-release.apk
+          
